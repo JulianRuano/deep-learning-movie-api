@@ -5,6 +5,7 @@ Sistema híbrido de recomendación basado en filtrado colaborativo utilizando Te
 ![Rating](/web/img/image-1.png)
 
 ## Arquitectura del Modelo
+
 ### Embeddings
 - **Dimensión de embedding**: 64 dimensiones para usuarios y películas
 - **Capa de Usuario**: Convierte 671 IDs de usuario en vectores densos de 64 elementos
@@ -15,6 +16,7 @@ Los embeddings aprenden automáticamente relaciones semánticas entre usuarios y
 ### Red Neuronal de Ratings
 Arquitectura secuencial que procesa embeddings concatenados:
 
+```
 Input: [user_embedding + movie_embedding] → 128 dimensiones
 ↓
 Dense(256, activation='relu')
@@ -22,6 +24,7 @@ Dense(256, activation='relu')
 Dense(128, activation='relu')
 ↓
 Dense(1) → Rating predicho
+```
 
 
 ## Función de Activación ReLU
@@ -55,7 +58,9 @@ El modelo optimiza dos objetivos simultáneamente:
 
 **Función de pérdida combinada**:
 
+```
 Total Loss = rating_weight × rating_loss + retrieval_weight × retrieval_loss
+```
 
 ## Datos y Entrenamiento
 
@@ -91,8 +96,9 @@ El modelo entrenado se despliega mediante una API REST construida con FastAPI, u
 ### Iniciar el Servidor
 
 Ejecuta el script de inicio incluido:
+```bash
 ./start_server.sh
-
+```
 
 El script realiza las siguientes verificaciones automáticas:
 - ✅ Existencia del entorno virtual (`.venv`)
@@ -106,94 +112,93 @@ El script realiza las siguientes verificaciones automáticas:
 ### Endpoints Disponibles
 
 #### 1. Predecir Rating
+```
 GET /predict/{user_id}/{movie_title}
-
-text
+```
 
 **Ejemplo**:
+```
 GET http://localhost:8000/predict/1/Batman
-
-text
+```
 
 **Respuesta**:
+```json
 {
-"user": "1",
-"movie": "Batman",
-"predicted_rating": 3.49
+  "user": "1",
+  "movie": "Batman",
+  "predicted_rating": 3.49
 }
-
-text
+```
 
 Retorna el rating predicho (1-5 estrellas) para la combinación usuario-película especificada.
 
 #### 2. Obtener Recomendaciones
+```
 GET /recommend/{user_id}?top_n={cantidad}
-
-text
+```
 
 **Ejemplo**:
+```
 GET http://localhost:8000/recommend/1?top_n=3
-
-text
+```
 
 **Respuesta**:
+```json
 {
-"user": "1",
-"top_n": 3,
-"recommendations": [
-"Vivement dimanche!",
-"American Pie",
-"Rocky III"
-]
+  "user": "1",
+  "top_n": 3,
+  "recommendations": [
+    "Vivement dimanche!",
+    "American Pie",
+    "Rocky III"
+  ]
 }
-
-text
+```
 
 Genera las top-N películas recomendadas personalizadas para el usuario especificado basándose en sus preferencias aprendidas.
 
 #### 3. Estado del Sistema
-
+```
 GET /health
-
-text
+```
 
 **Ejemplo**:
+```
 GET http://localhost:8000/health
-
-text
+```
 
 **Respuesta**:
+```json
 {
-"status": "ok",
-"model_loaded": true,
-"total_movies": 42373,
-"total_users": 671
+  "status": "ok",
+  "model_loaded": true,
+  "total_movies": 42373,
+  "total_users": 671
 }
-
-text
+```
 
 Verifica que el modelo esté cargado correctamente y muestra estadísticas del dataset.
 
 #### 4. Listar Películas
+```
 GET /movies?limit={cantidad}
-
-text
+```
 
 **Ejemplo**:
+```
 GET http://localhost:8000/movies?limit=5
-
-text
+```
 
 **Respuesta**:
+```json
 [
-"!Women Art Revolution",
-"#1 Cheerleader Camp",
-"#Horror",
-"#Pellichoopulu",
-"#SELFIEPARTY"
+  "!Women Art Revolution",
+  "#1 Cheerleader Camp",
+  "#Horror",
+  "#Pellichoopulu",
+  "#SELFIEPARTY"
 ]
-
-text
+```
 
 Retorna una lista de títulos de películas disponibles en el catálogo (útil para autocompletado en el frontend).
 
