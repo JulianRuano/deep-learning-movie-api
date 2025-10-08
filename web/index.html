@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<link rel="stylesheet" href="css/style.css">
+	<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<title>CYBER FLIX // Sistema de Recomendación Neural</title>
+</head>
+<body>
+	<div class="glitch-overlay"></div>
+	<div class="cyber-grid"></div>
+	
+	<header>
+		<div class="contenedor">
+			<h2 class="logotipo">
+				<span class="glitch" data-text="CYBER">CYBER</span>
+				<span class="neon-text">FLIX</span>
+			</h2>
+			<nav>
+				<a href="#" class="activo" data-text="INICIO">INICIO</a>
+				<a href="#" data-text="CATÁLOGO">CATÁLOGO</a>
+				<a href="#" data-text="NEURAL">NEURAL</a>
+				<a href="#" data-text="RECIENTES">RECIENTES</a>
+				<button id="btnUsuario" class="cyber-button">
+					<span>USUARIO</span>
+					<span class="cyber-button-bg"></span>
+				</button>
+			</nav>
+		</div>
+	</header>
+	<div id="formularioUsuario" class="formulario-usuario">
+		<div class="cyber-panel">
+			<button id="btnCerrar" class="cerrar-formulario">&times;</button>
+			<div class="panel-header">
+				<span class="terminal-prompt">root@cyberflix:~$</span>
+				<h3>ACCESO NEURAL</h3>
+			</div>
+			<form>
+				<label for="nombre">
+					<span class="label-icon">◉</span> SELECCIONAR USUARIO
+				</label>
+				<select id="nombre" name="nombre" required>
+					<option value="1">USUARIO_1 // Juan Roberto</option>
+					<option value="2">USUARIO_2 // Pedro Toro</option>
+					<option value="3">USUARIO_3 // Maria Gomez</option>          
+				</select>
+				<div class="button-group">
+					<button type="button" id="btnGuardar" class="cyber-button primary">
+						<span>CONECTAR</span>
+					</button>
+					<button type="button" id="btnCancelar" class="cyber-button secondary">
+						<span>CANCELAR</span>
+					</button>
+				</div>
+			</form>
+			<div class="scan-line"></div>
+		</div>
+	</div>
+
+
+	<main>
+		<div class="pelicula-principal">
+			<div class="cyber-scanlines"></div>
+			<div class="contenedor">
+				<div class="badge-container">
+					<span class="cyber-badge">DESTACADO</span>
+					<span class="cyber-badge pulse">NEURAL</span>
+				</div>
+				<h3 class="titulo">
+					<span class="glitch" data-text="INTERSTELLAR">INTERSTELLAR</span>
+				</h3>
+				<div class="info-bar">
+					<span class="rating">★★★★★ 9.8/10</span>
+					<span class="year">2024</span>
+					<span class="genre">SCI-FI / CYBERPUNK</span>
+				</div>
+				<p class="descripcion">
+					Un grupo de exploradores utiliza tecnología de vanguardia para atravesar un agujero de gusano 
+					y superar las limitaciones del viaje interestelar. Una odisea visual que desafía la realidad 
+					y el tiempo mismo en la búsqueda de un nuevo hogar para la humanidad.
+				</p>
+				<div class="button-group">
+					<button role="button" class="boton primary">
+						<span class="icon">▶</span>REPRODUCIR AHORA
+					</button>
+					<button role="button" class="boton secondary">
+						<span class="icon">◉</span>MÁS DATOS
+					</button>
+				</div>
+			</div>
+		</div>
+		
+		<div class="section-header">
+			<h2>
+				<span class="neon-text">RECOMENDACIONES</span>
+				<span class="subtitle">// Sistema Neural Adaptativo</span>
+			</h2>
+			<div id="statusIndicator" class="status-indicator">
+				<span class="status-dot"></span>
+				<span class="status-text">SISTEMA EN LÍNEA</span>
+			</div>
+		</div>
+	</main>
+
+	
+	<div class="recommendations-container">
+		<root></root>
+		<div class="loading-state" id="loadingState">
+			<div class="cyber-loader">
+				<div class="loader-bar"></div>
+				<div class="loader-bar"></div>
+				<div class="loader-bar"></div>
+			</div>
+			<p>CARGANDO DATOS NEURONALES...</p>
+		</div>
+	</div>
+
+	<script type="module">
+		function mostrarCarga(mostrar) {
+			const loadingState = document.getElementById('loadingState');
+			const root = document.querySelector('root');
+			if (mostrar) {
+				loadingState.style.display = 'flex';
+				root.style.opacity = '0.3';
+			} else {
+				loadingState.style.display = 'none';
+				root.style.opacity = '1';
+			}
+		}
+
+		function actualizarEstado(mensaje, tipo = 'success') {
+			const statusIndicator = document.getElementById('statusIndicator');
+			const statusText = statusIndicator.querySelector('.status-text');
+			const statusDot = statusIndicator.querySelector('.status-dot');
+			
+			statusText.textContent = mensaje;
+			statusDot.className = 'status-dot ' + tipo;
+		}
+
+		function cargarRecomendaciones(usuarioId) {
+			mostrarCarga(true);
+			actualizarEstado('PROCESANDO DATOS...', 'loading');
+			
+			// Endpoint: /recommend/{user}?top_n=3
+			fetch(`http://127.0.0.1:8000/recommend/${usuarioId}?top_n=8`)
+				.then(response => {
+					console.log('Response status:', response.status);
+					if (!response.ok) {
+						throw new Error(`HTTP error! status: ${response.status}`);
+					}
+					return response.json();
+				})
+				.then(data => {
+					console.log('Data received:', data);
+					// La respuesta tiene: { user, top_n, recommendations: [] }
+					const html = data.recommendations.map(title => {
+						// Escapar comillas simples en el título para evitar errores en onclick
+						const safeName = title.replace(/'/g, "\\'");
+						
+						return `<article class="movie-card">
+							<div class="card-overlay"></div>
+							<div class="card-info">
+								<span class="movie-title">${title}</span>
+								<div class="card-actions">
+									<button class="action-btn" onclick="consultarRating('${safeName}')">
+										<span class="icon">◉</span> ANALIZAR
+									</button>
+								</div>
+							</div>
+							<div class="card-glow"></div>
+						</article>`;
+					}).join('');
+
+					document.querySelector('root').innerHTML = html;
+					actualizarEstado(`CONECTADO // ${data.recommendations.length} PELÍCULAS`, 'success');
+					mostrarCarga(false);
+				})
+				.catch(error => {
+					console.error('Error fetching data:', error);
+					document.querySelector('root').innerHTML = 
+						`<div class="error-message">
+							<span class="error-icon">⚠</span>
+							<p>ERROR DE CONEXIÓN</p>
+							<small>${error.message}</small>
+						</div>`;
+					actualizarEstado('ERROR DE SISTEMA', 'error');
+					mostrarCarga(false);
+				});
+		}
+
+		// Evento change para el select
+		document.getElementById('nombre').addEventListener('change', function () {
+			cargarRecomendaciones(this.value);
+		});
+
+		// Cargar recomendaciones inicialmente con el valor por defecto
+		cargarRecomendaciones(document.getElementById('nombre').value);
+	</script>
+
+	<div class="formulario-consulta">
+		<div class="cyber-panel query-panel">
+			<div class="panel-header">
+				<span class="terminal-prompt">query@neural:</span>
+				<h3>ANÁLISIS DE RATING</h3>
+			</div>
+			<form>
+				<div class="input-group">
+					<input type="text" id="pelicula" name="pelicula" required 
+						   placeholder="Introduce el nombre de la película...">
+					<button type="button" id="btnConsultar" class="cyber-button query">
+						<span>ANALIZAR</span>
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<div id="resultadoConsulta" class="resultado-consulta"></div>
+
+	<script type="module">
+		// Hacer la función global para que pueda ser llamada desde los botones de las tarjetas
+		window.consultarRating = function(peliculaNombre) {
+			const usuarioId = document.getElementById('nombre').value;
+			consulta(usuarioId, peliculaNombre);
+		}
+
+		// Función para realizar la consulta con el usuario y la película proporcionados
+		function consulta(usuarioId, peliculaNombre) {
+			const resultadoDiv = document.getElementById('resultadoConsulta');
+			
+			// Mostrar estado de carga
+			resultadoDiv.innerHTML = `
+				<div class="cyber-panel result-panel loading">
+					<div class="cyber-loader small">
+						<div class="loader-bar"></div>
+						<div class="loader-bar"></div>
+						<div class="loader-bar"></div>
+					</div>
+					<p>ANALIZANDO...</p>
+				</div>
+			`;
+			
+			// Endpoint: /predict/{user}/{movie}
+			fetch(`http://127.0.0.1:8000/predict/${usuarioId}/${encodeURIComponent(peliculaNombre)}`)
+				.then(response => {
+					console.log('Predict response status:', response.status);
+					if (!response.ok) {
+						throw new Error(`HTTP error! status: ${response.status}`);
+					}
+					return response.json();
+				})
+				.then(data => {
+					console.log('Predict data received:', data);
+					// La respuesta tiene: { user, movie, predicted_rating }
+					const rating = data.predicted_rating;
+					const estrellas = '★'.repeat(Math.round(rating)) + '☆'.repeat(5 - Math.round(rating));
+					
+					// Crear el HTML con los resultados
+					const html = `
+						<div class="cyber-panel result-panel success">
+							<div class="result-header">
+								<span class="terminal-prompt">result@neural:</span>
+								<span class="result-badge">ANÁLISIS COMPLETADO</span>
+							</div>
+							<div class="result-content">
+								<h4>${data.movie}</h4>
+								<div class="rating-display">
+									<div class="rating-number">${rating.toFixed(2)}</div>
+									<div class="rating-stars">${estrellas}</div>
+								</div>
+								<p class="rating-text">Rating predicho para USUARIO_${data.user}</p>
+								<div class="rating-bar">
+									<div class="rating-fill" style="width: ${(rating / 5) * 100}%"></div>
+								</div>
+							</div>
+						</div>
+					`;
+			
+					// Mostrar los resultados en el contenedor específico
+					resultadoDiv.innerHTML = html;
+					
+					// Hacer scroll suave al resultado
+					resultadoDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+				})
+				.catch(error => {
+					console.error('Error fetching data:', error);
+					resultadoDiv.innerHTML = `
+						<div class="cyber-panel result-panel error">
+							<div class="result-header">
+								<span class="error-icon">⚠</span>
+								<span class="result-badge error">ERROR</span>
+							</div>
+							<div class="result-content">
+								<h4>No se pudo procesar la consulta</h4>
+								<p>${error.message}</p>
+								<small>Verifica que el nombre de la película sea correcto</small>
+							</div>
+						</div>
+					`;
+				});
+		}
+	
+		// Evento click para el botón de consultar
+		document.getElementById('btnConsultar').addEventListener('click', function () {
+			// Obtener los valores de los campos
+			const usuarioId = document.getElementById('nombre').value;
+			const peliculaNombre = document.getElementById('pelicula').value;
+	
+			if (!peliculaNombre.trim()) {
+				const resultadoDiv = document.getElementById('resultadoConsulta');
+				resultadoDiv.innerHTML = `
+					<div class="cyber-panel result-panel error">
+						<p>⚠ Introduce un nombre de película</p>
+					</div>
+				`;
+				return;
+			}
+			
+			// Llamar a la función de consulta con los valores proporcionados
+			consulta(usuarioId, peliculaNombre);
+		});
+		
+		// Permitir enviar con Enter
+		document.getElementById('pelicula').addEventListener('keypress', function(e) {
+			if (e.key === 'Enter') {
+				e.preventDefault();
+				document.getElementById('btnConsultar').click();
+			}
+		});
+	</script>
+
+
+	
+
+	<footer class="cyber-footer">
+		<div class="contenedor">
+			<div class="footer-grid">
+				<div class="footer-section">
+					<h4>CYBER FLIX</h4>
+					<p>Sistema de Recomendación Neural v2.0</p>
+				</div>
+				<div class="footer-section">
+					<h4>TECNOLOGÍA</h4>
+					<p>FastAPI • Machine Learning • Neural Networks</p>
+				</div>
+				<div class="footer-section">
+					<h4>ESTADO</h4>
+					<p>Todos los sistemas operativos</p>
+				</div>
+			</div>
+			<div class="footer-bottom">
+				<p>© 2025 CYBER FLIX // Todos los derechos reservados</p>
+			</div>
+		</div>
+	</footer>
+
+<script src="https://kit.fontawesome.com/2c36e9b7b1.js" crossorigin="anonymous"></script>
+	<script src="js/main.js"></script>
+
+</body>
+</html>
